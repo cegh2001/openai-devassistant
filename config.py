@@ -1,1 +1,1 @@
-api_key = "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"
+api_key = "tuapikey"
