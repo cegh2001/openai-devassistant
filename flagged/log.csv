@@ -1,0 +1,4 @@
+input_text,conversation_history,output 0,output 1,flag,username,timestamp
+ola,Run,,,,,2023-04-30 22:47:08.069462
+salir,Run,"[('✋ ¡Hasta luego!', 'assistant')]","[{'role': 'system', 'content': 'Eres un asistente muy útil.'}, {'role': 'user', 'content': 'hey'}, {'role': 'user', 'content': 'heyy'}, {'role': 'user', 'content': 'heyy'}]",,,2023-04-30 22:56:07.366666
+ola,Run,C:\Users\Carlinho\Downloads\openai-devassistant\flagged\output\tmpwxhlwhlv.json,,,2023-04-30 23:30:51.642920

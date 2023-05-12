@@ -1,61 +1,66 @@
+import os
+import openai
+import gradio as gr
 import config
-import openai  # pip install openai
-import typer  # pip install typer[all]
-from rich import print  # pip install rich
-from rich.table import Table
 
-def main():
+#if you have OpenAI API key as an environment variable, enable the below
+#openai.api_key = os.getenv("OPENAI_API_KEY")
+#if you have OpenAI API key as a string, enable the below
+openai.api_key = config.api_key
 
-    openai.api_key = config.api_key
+start_sequence = "\nAI:"
+restart_sequence = "\nHuman: "
 
-    print("💬 [bold green]ChatGPT API en Python[/bold green]")
+prompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n\nHuman: Hello, who are you?\nAI: I am an AI created by OpenAI. How can I help you today?\nHuman: "
 
-    table = Table("Comando", "Descripción")
-    table.add_row("exit or salir", "Salir de la aplicación")
-    table.add_row("new or nueva", "Crear una nueva conversación")
+def openai_create(prompt,messages,s):
+    max_tokens = 4097
+    response_content = ''
+    remaining_tokens = max_tokens
 
-    print(table)
-
-    # Contexto del asistente
-    context = {"role": "system",
-               "content": "Eres un asistente muy útil."}
-    messages = [context]
-
-    while True:
-        
-
-        content = __prompt()
-
-        if content == "new" or content == "nueva":
-            print("🆕 Nueva conversación creada")
-            messages = [context]
-            content = __prompt()
-
+    while remaining_tokens > 0:
+        # Enviamos la cantidad de tokens que queden disponibles o el máximo permitido
+        num_tokens = min(remaining_tokens, max_tokens)
+        context = {"role": "system", "content": "Eres un asistente muy útil."}
+        messages = [context]
+        content = prompt[len(prompt)-remaining_tokens:len(prompt)-remaining_tokens+num_tokens]
+        remaining_tokens -= num_tokens
         messages.append({"role": "user", "content": content})
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=messages)
+        completions = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
 
-        response_content = response.choices[0].message.content
+        response_content += completions.choices[0].message.content
 
-        messages.append({"role": "assistant", "content": response_content})
+        messages.pop()  # Elimina la respuesta del asistente agregada anteriormente
 
-        print(f"[bold green]> [/bold green] [green]{response_content}[/green]")
+        messages.append({"role": "assistant", "content": completions.choices[0].message.content})
 
+    return response_content.strip()
 
-def __prompt() -> str:
-    prompt = typer.prompt("\n¿Sobre qué quieres hablar? ")
+def chatgpt_clone(input, history):
+    history = history or []
+    s = list(sum(history, ()))
+    s.append(input)
+    inp = ' '.join(s)
+    output = openai_create(inp, history, s)
+    history.append((input, output))
+    # Abre el archivo txt en modo agregar
+    with open("conversacion.txt", "a") as file:
+        file.write("User: " + input + "\n" + "Assistant: " + output + "\n")
+    return history, history
 
-    if prompt == "exit" or prompt == "salir":
-        exit = typer.confirm("✋ ¿Estás seguro?")
-        if exit:
-            print("👋 ¡Hasta luego!")
-            raise typer.Abort()
+block = gr.Blocks()
 
-        return __prompt()
-
-    return prompt
-
-
-if __name__ == "__main__":
-    typer.run(main)
+with block:
+    gr.Markdown("""<h1><center>Build Yo'own ChatGPT with OpenAI API & Gradio</center></h1>
+    """)
+    chatbot = gr.Chatbot()
+    message = gr.Textbox(placeholder=prompt)
+    state = gr.State()
+    submit = gr.Button("SEND")
+    submit.click(chatgpt_clone, inputs=[message, state], outputs=[chatbot, state])
+    
+block.launch(debug=True)

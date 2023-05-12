@@ -1,0 +1,48 @@
+User: Imagina que estas trbajando en un proyecto en codeigniter 4, como harias un controlador para los perfiles de usuario, tanto para la vista principal (usuario viendo su propio perfil )como para la vista de visitante (un usuario viendo a otro usuario)
+Assistant: Para crear un controlador de perfil de usuario en CodeIgniter 4, se pueden seguir los siguientes pasos:
+
+1. Crear el controlador en la carpeta "app/Controllers" con el nombre "Profile.php".
+2. Definir los métodos "index" y "view" en el controlador, que manejarán las vistas principal y de visitante respectivamente.
+
+```php
+class Profile extends BaseController
+{
+    public function index()
+    {
+        // Código para mostrar el perfil del usuario autenticado
+    }
+
+    public function view($username)
+    {
+        // Código para mostrar el perfil de un usuario específico
+    }
+}
+```
+
+3. En el método "index", se puede utilizar la clase "Auth" de CodeIgniter para obtener el objeto del usuario autenticado y pasar la información a la vista correspondiente.
+
+```php
+public function index()
+{
+    $auth = service('auth'); // Obtener el objeto de autenticación
+    $user = $auth->user(); // Obtener el usuario autenticado
+
+    // Pasar la información del usuario a la vista
+    return view('profile/index', ['user' => $user]);
+}
+```
+
+4. En el método "view", se puede utilizar el modelo correspondiente para obtener la información del usuario específico por su nombre de usuario y pasarla a la vista correspondiente.
+
+```php
+public function view($username)
+{
+    $model = new UserModel(); // Crear una instancia del modelo de usuario
+    $user = $model->where('username', $username)->first(); // Obtener el usuario por nombre de usuario
+
+    // Pasar la información del usuario a la vista
+    return view('profile/view', ['user' => $user]);
+}
+```
+
+Con estos pasos, se puede crear un controlador de perfil de usuario en CodeIgniter 4 que maneje tanto la vista principal como la vista de visitante.
