@@ -19,7 +19,7 @@ def openai_create(prompt, messages, input_history):
     while remaining_tokens > 0:
         # Send the remaining or maximum available tokens
         num_tokens = min(remaining_tokens, max_tokens)
-        context = {"role": "system", "content": "Eres un asistente muy útil, sobre todo eres un asistente experto en programación."}
+        context = {"role": "system", "content": "Eres un asistente muy útil, sobre todo en programación."}
         messages = [context]
         content = prompt[len(prompt) - remaining_tokens: len(prompt) - remaining_tokens + num_tokens]
         remaining_tokens -= num_tokens
@@ -55,7 +55,7 @@ def chatgpt_clone(input_text, history):
 block = gr.Blocks()
 
 with block:
-    gr.Markdown("""<h1><center>Mejor que ChatGPT 3</center></h1>
+    gr.Markdown("""<h1><center>Chatgpt personal</center></h1>
     """)
     chatbot = gr.Chatbot()
     message = gr.Textbox(placeholder=prompt)

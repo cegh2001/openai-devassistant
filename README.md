@@ -1,5 +1,7 @@
 # openai-devassistant
 
+Esto es un chatbot que usa las bibliotecas de gradio para tener una interfaz grafica y no tener la necesidad de ejecutar todo a traves de terminal, este surge para tener un acceso a modelos mas avanzadas de chatgpt a nivel de respuesta solo conectando la api y sabiendo como programar el contexto y la coherencia de la conversacion de la IA, ademas te permite regular como seran las respuestas a traves de codigo. 
+
 start_sequence y restart_sequence son variables que se usan para mantener el hilo completo de la conversación. La idea es que cada mensaje del usuario (Human) comienza con restart_sequence y cada respuesta del asistente (AI) comienza con start_sequence.
 
 prompt es el mensaje de introducción que aparece en la ventana del chat.
