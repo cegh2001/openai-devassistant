@@ -1,49 +1,37 @@
-import os
-import sys
-import openai
 import gradio as gr
-import config
+# Importar el modelo, el tokenizador, y el dispositivo
+from transformers import AutoModelForCausalLM, AutoTokenizer
+model = AutoModelForCausalLM.from_pretrained("bigscience/bloom-560m")
+tokenizer = AutoTokenizer.from_pretrained("bigscience/bloom-560m")
+import torch
 
-openai.api_key = config.api_key
-
-start_sequence = "\nAI:"
-restart_sequence = "\nHuman: "
-
-prompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n\nHuman: Hello, who are you?\nAI: I am an AI created by OpenAI. How can I help you today?\nHuman: "
-
-def openai_create(prompt, messages, input_history):
+# Definir la función bloom_create
+def bloom_create(prompt, messages, input_history):
     max_tokens = 4096  # Limit of tokens to avoid exceeding the maximum allowed
     response_content = ''
-    remaining_tokens = max_tokens
+    past_key_values = None  # Initialize the state of the model
 
-    while remaining_tokens > 0:
-        # Send the remaining or maximum available tokens
-        num_tokens = min(remaining_tokens, max_tokens)
-        context = {"role": "system", "content": "Eres un asistente muy útil, sobre todo en programación."}
-        messages = [context]
-        content = prompt[len(prompt) - remaining_tokens: len(prompt) - remaining_tokens + num_tokens]
-        remaining_tokens -= num_tokens
-        messages.append({"role": "user", "content": content})
+    # Encode the messages and the prompt as input ids
+    input_ids = tokenizer.encode('\n'.join([message['content'] for message in messages]), return_tensors='pt')
+    
+    # Generate output ids using the model
+    output_ids = model.generate(input_ids, max_length=max_tokens, do_sample=True, top_p=0.95, use_cache=True)
 
-        completions = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=messages
-        )
+    # Decode the output ids as text
+    response_content = tokenizer.decode(output_ids[0], skip_special_tokens=True)
 
-        response_content += completions.choices[0].message.content
-
-        messages.pop()  # Remove the previously added assistant response
-
-        messages.append({"role": "assistant", "content": completions.choices[0].message.content})
+    # Update the state of the model
+    past_key_values = model.past_key_values
 
     return response_content.strip()
 
+# Definir la función chatgpt_clone
 def chatgpt_clone(input_text, history):
     history = history or []
     input_history = list(sum(history, ()))
     input_history.append(input_text)
     inp = ' '.join(input_history)
-    output = openai_create(inp, history, input_history)
+    output = bloom_create(inp, history, input_history)
     history.append((input_text, output))
     try:
         with open("conversacion.txt", "a") as file:
@@ -52,18 +40,18 @@ def chatgpt_clone(input_text, history):
         print("Error writing to file:", str(e))
     return history, history
 
-block = gr.Blocks()
+
+block = gr.Blocks(title="Chatgpt personal")
 
 with block:
-    gr.Markdown("""<h1><center>Chatgpt personal</center></h1>
-    """)
-    chatbot = gr.Chatbot()
-    message = gr.Textbox(placeholder=prompt)
-    state = gr.State()
-    submit = gr.Button("SEND") # Button to send message
-    submit.click(chatgpt_clone, inputs=[message, state], outputs=[chatbot, state]) # Send message on button click SEND
-    submit.click(lambda x: gr.update(value=''), [], [message])  # Clear input textbox on button click
-    message.submit(chatgpt_clone, inputs=[message, state], outputs=[chatbot, state]) # Send message on input pressing Enter
-    message.submit(lambda x: gr.update(value=''), [], [message])  # Clear input textbox on input submit
+    gr.Markdown(description="Esta es una aplicación de chatbot basada en el modelo Chatgpt.")
+    chatbot = gr.Chatbot(flagging_options=["Inapropiado", "Incorrecto"])
+    message = gr.Textbox(label="Escribe tu mensaje aquí")
+    state = gr.State(default={"history":[]})
+    submit = gr.Button("SEND") # Botón para enviar mensaje
+    submit.click(chatgpt_clone, inputs=[message, state], outputs=[chatbot, state]) # Enviar mensaje al hacer clic en SEND
+    submit.click(lambda x: gr.update(value=''), [], [message])  # Borrar el cuadro de texto de entrada al hacer clic en el botón
+    message.submit(chatgpt_clone, inputs=[message, state], outputs=[chatbot, state]) # Enviar mensaje al presionar Enter
+    message.submit(lambda x: gr.update(value=''), [], [message])  # Borrar el cuadro de texto de entrada al enviar el mensaje
 
 block.launch(debug=True, share=True)
